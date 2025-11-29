@@ -27,7 +27,9 @@ type Controller struct {
 
 func (c *Controller) HandleInsert(w http.ResponseWriter, r *http.Request) {
 	var payload InsertPayload
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	err := dec.Decode(&payload)
 	if err != nil {
 		http.Error(w, "error in handleInsert : bad json", http.StatusInternalServerError)
 		return
@@ -48,8 +50,12 @@ func (c *Controller) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error in handleSearch: bad json", http.StatusInternalServerError)
 		return
 	}
+	if payload.K <= 0 {
+		payload.K = 1
+	}
 	res, err := c.Store.Search(payload.Vector, payload.K)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	apiResults := make([]SearchResponse, 0)
@@ -60,6 +66,7 @@ func (c *Controller) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			Data:  v.Vector.Vector,
 		})
 	}
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(apiResults)
 	if err != nil {
 		http.Error(w, "error in handleSearch: encoding error", http.StatusInternalServerError)

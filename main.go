@@ -24,7 +24,7 @@ func main() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(5 * time.Minute) // Save every 5 mins
+		ticker := time.NewTicker(2 * time.Minute) // Save every 5 mins
 		for range ticker.C {
 			fmt.Println("Snapshotting database...")
 			err := vs.Save(STORENAME)
